@@ -300,7 +300,7 @@ Syncer logs to `logs/sync.log` with daily rotation, keeping the last 30 days. Ca
 ## Tech Stack
 
 - **Language**: Python 3.11+
-- **MCP SDK**: `mcp` (Python SDK)
+- **MCP SDK**: `fastmcp` — high-level wrapper over the official MCP Python SDK. Simplifies tool definition via decorators (`@mcp.tool()`) instead of manual protocol boilerplate.
 - **Google APIs**: `google-api-python-client`, `google-auth-oauthlib`
 - **Scheduling**: macOS `launchd`
 - **No database**: filesystem only (Markdown + JSON)
