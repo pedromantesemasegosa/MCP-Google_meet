@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Project data (sensitive / generated)
+meetings/
+logs/
+config/credentials.json
+config/token.json
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+
+# OS
+.DS_Store

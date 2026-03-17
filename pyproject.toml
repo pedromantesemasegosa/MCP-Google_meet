@@ -1,0 +1,27 @@
+[project]
+name = "mcp-meet-notes"
+version = "0.1.0"
+description = "MCP Server for searching Google Meet/Gemini meeting notes"
+requires-python = ">=3.11"
+dependencies = [
+    "fastmcp>=2.0.0",
+    "google-api-python-client>=2.100.0",
+    "google-auth-oauthlib>=1.2.0",
+    "google-auth-httplib2>=0.2.0",
+    "pyyaml>=6.0",
+    "python-slugify>=8.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[project.scripts]
+mcp-meet-sync = "src.syncer:main"
+mcp-meet-server = "src.server:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
