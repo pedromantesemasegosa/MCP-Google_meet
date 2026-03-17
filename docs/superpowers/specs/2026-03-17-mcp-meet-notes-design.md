@@ -123,7 +123,11 @@ meetings/
 
 ### 1. `search_by_topic(query: str, limit?: int) → list[Meeting]`
 
-Searches meetings related to a topic. First searches index.json (titles + summaries). If more depth is needed, searches inside .md content. Returns matching meetings with their summaries.
+Searches meetings related to a topic using a two-phase strategy:
+1. **Index search**: scans `index.json` titles and summaries for keyword matches.
+2. **Full-text fallback**: if fewer than `limit` results are found (default `limit=5`), falls back to searching inside `.md` file content for additional matches.
+
+Returns matching meetings with their summaries, ordered by relevance (title match > summary match > body match).
 
 ### 2. `search_by_participant(participant: str, date_from?: str, date_to?: str) → list[Meeting]`
 
@@ -155,17 +159,49 @@ All tools return structured JSON. The LLM interprets and presents the data conve
 - First-time setup requires interactive browser login via `scripts/first_auth.py`
 - Token auto-refreshes. If refresh token expires (~6 months on Workspace), logs a warning and requires manual re-auth.
 
+### Expected Gemini notes format
+
+Google Gemini generates meeting notes as Google Docs with a consistent structure:
+
+```
+Meeting title (as document title)
+Date: March 17, 2026
+Duration: 25 minutes
+Attendees: Pedro Mantese, Laura Garcia, Carlos Ruiz
+
+Summary
+[Gemini-generated summary paragraph]
+
+Transcript
+[Speaker-attributed transcript]
+
+Action items
+- Pedro: Review migration PR
+- Laura: Prepare Friday demo
+```
+
+The `document_parser.py` extracts metadata using heading-based parsing:
+- **Title**: from the Google Doc title (Drive API metadata)
+- **Date**: parsed from the "Date:" line or the document creation date as fallback
+- **Participants**: parsed from the "Attendees:" line; emails resolved by matching against known participant patterns in existing meetings
+- **Duration**: parsed from the "Duration:" line if present, otherwise `null`
+- **Summary for index**: first 1-2 sentences from the "Summary" section
+- **Action items detection**: presence of an "Action items" section with list items sets `has_action_items: true`
+
+If Gemini changes its output format, the parser logs a warning and falls back to: title from Drive metadata, date from document creation date, full document body as transcript, no structured action items.
+
 ### Sync process
 
 1. Read `last_sync` from `index.json`
 2. Query Google Drive API for documents in the Gemini notes folder modified since `last_sync`
 3. For each new/modified document:
    a. Download content via Drive API (export as plain text)
-   b. Extract metadata: title, date, participants, duration
-   c. Generate short summary for the index
+   b. Parse document using heading-based extraction (see format above)
+   c. Generate short summary from Gemini's own summary section
    d. Convert to Markdown with YAML frontmatter
-   e. Name file: `YYYY-MM-DD-titulo-slugificado.md`
-   f. Add/update entry in `index.json`
+   e. Write file atomically (write to `.tmp` then rename) to prevent partial reads
+   f. Name file: `YYYY-MM-DD-titulo-slugificado.md`
+   g. Add/update entry in `index.json` (also written atomically)
 4. Update `last_sync` timestamp
 
 ### Idempotency
@@ -216,7 +252,7 @@ MCP-Meet/
 | No internet connection | Syncer fails silently, logs error, retries next cycle. MCP continues serving local data. |
 | OAuth token expired | Refresh token renews automatically. If refresh token expires, logs warning requiring manual re-auth. |
 | Unexpected document format | Parses what it can, saves document with `parse_warnings` flag in frontmatter. |
-| Corrupted index.json | Auto-regenerates by scanning existing .md files and reading their frontmatters. |
+| Corrupted index.json | Auto-regenerates by scanning existing .md files: reads YAML frontmatter for metadata, parses Markdown body to reconstruct `has_action_items` (scans for `## Action Items` section with checklist items) and `summary` (extracts first 1-2 sentences from `## Resumen` section). |
 | Duplicate meeting | Detected by `source_doc_id`, updates existing file instead of creating duplicate. |
 
 ## Logging
