@@ -5,6 +5,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+_PROJECT_ROOT = Path(__file__).parent.parent
+
 from fastmcp import FastMCP
 
 from src.index_manager import IndexManager
@@ -101,7 +103,10 @@ def create_server(meetings_dir: Path | None = None) -> FastMCP:
 
 def main() -> None:
     """Entry point for the MCP server."""
-    server = create_server()
+    settings_path = _PROJECT_ROOT / "config" / "settings.json"
+    settings = json.loads(settings_path.read_text()) if settings_path.exists() else {}
+    meetings_dir = _PROJECT_ROOT / settings.get("meetings_dir", "meetings")
+    server = create_server(meetings_dir=meetings_dir)
     server.run()
 
 

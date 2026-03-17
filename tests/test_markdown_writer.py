@@ -44,7 +44,7 @@ class TestWriteMeetingMarkdown:
         path = write_meeting_markdown(m, tmp_meetings_dir)
         assert path.exists()
         content = path.read_text()
-        assert "title: \"Test Meeting\"" in content
+        assert "title:" in content and "Test Meeting" in content
         assert "## Resumen" in content
         assert "We discussed things." in content
         assert "## Transcripcion" in content
@@ -76,3 +76,14 @@ class TestWriteMeetingMarkdown:
         assert fm["id"] == "abc"
         assert fm["title"] == "Test"
         assert len(fm["participants"]) == 2
+
+    def test_write_special_characters_in_title(self, sample_meeting, tmp_meetings_dir):
+        """Verify titles with quotes don't break YAML."""
+        sample_meeting.title = 'Q&A: Pedro "Chief" Manager'
+        path = write_meeting_markdown(sample_meeting, tmp_meetings_dir)
+        content = path.read_text()
+        import yaml
+        # Extract frontmatter and verify it parses
+        parts = content.split("---")
+        meta = yaml.safe_load(parts[1])
+        assert meta["title"] == 'Q&A: Pedro "Chief" Manager'

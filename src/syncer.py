@@ -17,6 +17,11 @@ from src.models import Meeting, MeetingIndexEntry
 logger = logging.getLogger(__name__)
 
 
+def _utcnow() -> datetime:
+    """Return current UTC time as a naive datetime (tzinfo=None)."""
+    return datetime.now(tz=timezone.utc).replace(tzinfo=None)
+
+
 class Syncer:
     def __init__(self, meetings_dir: Path, drive_client: DriveClient) -> None:
         self._meetings_dir = meetings_dir
@@ -38,7 +43,7 @@ class Syncer:
             except Exception as e:
                 logger.error("Failed to process document %s: %s", doc.get("id"), e)
                 continue
-        index.last_sync = datetime.now(tz=timezone.utc)
+        index.last_sync = _utcnow()
         self._index_manager.save(index)
         logger.info("Sync completed. Processed %d documents.", len(docs))
 
@@ -51,11 +56,11 @@ class Syncer:
         meeting = Meeting(
             id=str(uuid.uuid4())[:8],
             title=parsed.title,
-            date=parsed.date or datetime.now(tz=timezone.utc),
+            date=parsed.date or _utcnow(),
             duration_minutes=parsed.duration_minutes,
             participants=parsed.participants,
             source_doc_id=doc_id,
-            synced_at=datetime.now(tz=timezone.utc),
+            synced_at=_utcnow(),
             tags=[],
             summary=parsed.summary,
             transcript=parsed.transcript,
@@ -83,12 +88,12 @@ def _setup_logging(logs_dir: Path) -> None:
 def main() -> None:
     project_root = Path(__file__).parent.parent
     config_dir = project_root / "config"
-    meetings_dir = project_root / "meetings"
     logs_dir = project_root / "logs"
     _setup_logging(logs_dir)
-    meetings_dir.mkdir(exist_ok=True)
     settings_path = config_dir / "settings.json"
     settings = json.loads(settings_path.read_text()) if settings_path.exists() else {}
+    meetings_dir = project_root / settings.get("meetings_dir", "meetings")
+    meetings_dir.mkdir(exist_ok=True)
     folder_name = settings.get("drive_folder_name", "Meeting notes")
     try:
         drive = DriveClient(config_dir=config_dir, folder_name=folder_name)

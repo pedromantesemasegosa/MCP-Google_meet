@@ -5,6 +5,7 @@ import os
 import tempfile
 from pathlib import Path
 
+import yaml
 from slugify import slugify
 
 from src.models import Meeting
@@ -35,32 +36,27 @@ def write_meeting_markdown(meeting: Meeting, meetings_dir: Path) -> Path:
 
 
 def _render_markdown(meeting: Meeting) -> str:
-    participants_yaml = "\n".join(f'  - "{p}"' for p in meeting.participants)
-    tags_yaml = "[]" if not meeting.tags else "\n".join(f'  - "{t}"' for t in meeting.tags)
-    warnings_yaml = ""
+    meta = {
+        "id": meeting.id,
+        "title": meeting.title,
+        "date": meeting.date.isoformat(),
+        "duration_minutes": meeting.duration_minutes,
+        "participants": meeting.participants,
+        "source_doc_id": meeting.source_doc_id,
+        "synced_at": meeting.synced_at.isoformat() if meeting.synced_at else None,
+        "tags": meeting.tags,
+    }
     if meeting.parse_warnings:
-        warnings_list = "\n".join(f'  - "{w}"' for w in meeting.parse_warnings)
-        warnings_yaml = f"parse_warnings:\n{warnings_list}\n"
+        meta["parse_warnings"] = meeting.parse_warnings
 
-    frontmatter = f'''---
-id: "{meeting.id}"
-title: "{meeting.title}"
-date: "{meeting.date.isoformat()}"
-duration_minutes: {meeting.duration_minutes if meeting.duration_minutes is not None else "null"}
-participants:
-{participants_yaml}
-source_doc_id: "{meeting.source_doc_id}"
-synced_at: "{meeting.synced_at.isoformat()}"
-tags: {tags_yaml}
-{warnings_yaml}---'''
+    frontmatter = "---\n" + yaml.dump(meta, allow_unicode=True, default_flow_style=False, sort_keys=False) + "---"
 
     action_items_section = ""
     if meeting.action_items:
         items = "\n".join(f"- [ ] {ai.assignee}: {ai.task}" for ai in meeting.action_items)
         action_items_section = f"\n## Action Items\n\n{items}\n"
 
-    return f"""{frontmatter}
-
+    body = f"""
 ## Resumen
 
 {meeting.summary}
@@ -69,3 +65,5 @@ tags: {tags_yaml}
 
 {meeting.transcript}
 {action_items_section}"""
+
+    return frontmatter + "\n" + body
