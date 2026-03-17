@@ -53,6 +53,8 @@ def search_by_participant(index, participant, date_from=None, date_to=None):
 def search_by_date(index, date_from, date_to=None):
     if date_to is None:
         date_to = date_from.replace(hour=23, minute=59, second=59)
+    elif date_to.hour == 0 and date_to.minute == 0 and date_to.second == 0:
+        date_to = date_to.replace(hour=23, minute=59, second=59)
     results = []
     for entry in index.meetings:
         if date_from <= entry.date <= date_to:
@@ -112,6 +114,8 @@ def get_action_items(index, meetings_dir, date_from=None, date_to=None, particip
 def get_executive_summary(index, meetings_dir, date_from, date_to=None):
     if date_to is None:
         date_to = date_from.replace(hour=23, minute=59, second=59)
+    elif date_to.hour == 0 and date_to.minute == 0 and date_to.second == 0:
+        date_to = date_to.replace(hour=23, minute=59, second=59)
     results = []
     for entry in index.meetings:
         if not (date_from <= entry.date <= date_to):
