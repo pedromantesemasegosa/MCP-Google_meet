@@ -53,10 +53,15 @@ class Syncer:
         logger.info("Processing: %s (%s)", doc_title, doc_id)
         content = self._drive.download_document(doc_id)
         parsed = parse_gemini_document(content, doc_title=doc_title)
+
+        # Date priority: parsed from content > parsed from title > Drive createdTime > now
+        drive_date = self._parse_drive_date(doc.get("createdTime"))
+        meeting_date = parsed.date or drive_date or _utcnow()
+
         meeting = Meeting(
             id=str(uuid.uuid4())[:8],
             title=parsed.title,
-            date=parsed.date or _utcnow(),
+            date=meeting_date,
             duration_minutes=parsed.duration_minutes,
             participants=parsed.participants,
             source_doc_id=doc_id,
@@ -73,6 +78,18 @@ class Syncer:
         path = write_meeting_markdown(meeting, self._meetings_dir)
         entry = MeetingIndexEntry.from_meeting(meeting, path.name)
         self._index_manager.add_or_update_entry(index, entry)
+
+    @staticmethod
+    def _parse_drive_date(date_str: str | None) -> datetime | None:
+        """Parse a Drive API datetime string (e.g. '2026-03-17T10:00:00.000Z') to naive datetime."""
+        if not date_str:
+            return None
+        try:
+            # Drive returns ISO format with Z suffix
+            cleaned = date_str.replace("Z", "+00:00")
+            return datetime.fromisoformat(cleaned).replace(tzinfo=None)
+        except (ValueError, AttributeError):
+            return None
 
 
 def _setup_logging(logs_dir: Path) -> None:

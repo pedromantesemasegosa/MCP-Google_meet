@@ -1,4 +1,9 @@
-"""Parse Gemini meeting notes from plain text into structured data."""
+"""Parse meeting notes from plain text into structured data.
+
+Supports two modes:
+- Gemini format: structured with Date/Duration/Attendees headers + sections
+- Generic format: any Google Doc — extracts what it can, uses full text as content
+"""
 from __future__ import annotations
 
 import re
@@ -11,7 +16,7 @@ def parse_gemini_document(text: str, doc_title: str) -> ParsedDocument:
     warnings: list[str] = []
     lines = text.strip().split("\n")
 
-    date = _extract_date(lines)
+    date = _extract_date(lines) or _extract_date_from_title(doc_title)
     duration = _extract_duration(lines)
     participants = _extract_participants(lines)
     sections = extract_sections(text)
@@ -20,9 +25,12 @@ def parse_gemini_document(text: str, doc_title: str) -> ParsedDocument:
     transcript = sections.get("transcript", "")
     action_items = extract_action_items(sections.get("action items", ""))
 
-    if not summary and not transcript and not action_items:
-        warnings.append("Could not parse document structure. Using full text as transcript.")
+    is_generic = not summary and not transcript and not action_items
+
+    if is_generic:
+        warnings.append("No Gemini structure detected. Parsed as generic document.")
         transcript = text.strip()
+        summary = _extract_auto_summary(text, max_chars=300)
 
     if date is None and _has_metadata_lines(lines):
         warnings.append("Date line found but could not be parsed.")
@@ -111,3 +119,83 @@ def extract_action_items(text: str) -> list[ActionItem]:
 
 def _has_metadata_lines(lines: list[str]) -> bool:
     return any(re.match(r"^Date:", line, re.IGNORECASE) for line in lines)
+
+
+def _extract_date_from_title(title: str) -> datetime | None:
+    """Try to extract a date from the document title.
+
+    Handles patterns like:
+    - "Acta 03-17", "Acta 18/10"
+    - "Acta MKT 2022/10/02", "Acta JD 2/04/2021"
+    - "Planificación noviembre 2023"
+    - "Plan 2017/18" (academic year — returns start year)
+    """
+    # Full date: YYYY/MM/DD or YYYY-MM-DD
+    m = re.search(r"(\d{4})[/\-](\d{1,2})[/\-](\d{1,2})", title)
+    if m:
+        try:
+            return datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        except ValueError:
+            pass
+
+    # DD/MM/YYYY or DD-MM-YYYY
+    m = re.search(r"(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})", title)
+    if m:
+        try:
+            return datetime(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+        except ValueError:
+            pass
+
+    # Month name + year: "noviembre 2023", "March 2026"
+    month_map = {
+        "enero": 1, "february": 2, "febrero": 2, "march": 3, "marzo": 3,
+        "april": 4, "abril": 4, "may": 5, "mayo": 5, "june": 6, "junio": 6,
+        "july": 7, "julio": 7, "august": 8, "agosto": 8, "september": 9,
+        "septiembre": 9, "october": 10, "octubre": 10, "november": 11,
+        "noviembre": 11, "december": 12, "diciembre": 12, "january": 1,
+    }
+    m = re.search(r"(" + "|".join(month_map.keys()) + r")\s+(\d{4})", title, re.IGNORECASE)
+    if m:
+        month = month_map[m.group(1).lower()]
+        year = int(m.group(2))
+        return datetime(year, month, 1)
+
+    # Academic year: "2017/18" or "2017-18"
+    m = re.search(r"(\d{4})[/\-](\d{2})(?!\d)", title)
+    if m:
+        try:
+            return datetime(int(m.group(1)), 1, 1)
+        except ValueError:
+            pass
+
+    return None
+
+
+def _extract_auto_summary(text: str, max_chars: int = 300) -> str:
+    """Build a summary from the first meaningful lines of a generic document.
+
+    Skips blank lines and very short lines (titles, headers) to find
+    the first substantive paragraph(s).
+    """
+    lines = text.strip().split("\n")
+    meaningful: list[str] = []
+    chars = 0
+
+    for line in lines:
+        stripped = line.strip()
+        # Skip blanks, very short lines (likely titles), and BOM
+        if not stripped or stripped == "\ufeff":
+            continue
+        # Skip lines that look like headings (all caps, very short)
+        if len(stripped) < 15 and stripped == stripped.upper():
+            continue
+
+        meaningful.append(stripped)
+        chars += len(stripped)
+        if chars >= max_chars:
+            break
+
+    result = " ".join(meaningful)
+    if len(result) > max_chars:
+        result = result[:max_chars].rsplit(" ", 1)[0] + "..."
+    return result
