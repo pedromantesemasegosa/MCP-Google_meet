@@ -21,3 +21,8 @@ config/token.json
 
 # OS
 .DS_Store
+
+# Dev / mock data
+generate_mock_meetings.py
+mock-meetings.txt
+mock_meetings_output/
