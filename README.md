@@ -3,7 +3,7 @@
 Search your Google Meet transcriptions and summaries from Claude Code or Cursor.
 
 Syncs Gemini-generated meeting notes from Google Drive to local Markdown files,
-and exposes 6 search tools via MCP (Model Context Protocol).
+and exposes 7 search tools via MCP (Model Context Protocol).
 
 ## What can you ask?
 
@@ -35,11 +35,12 @@ and exposes 6 search tools via MCP (Model Context Protocol).
 ## Quick Start
 
 1. Set up Google Cloud OAuth ([setup guide](docs/setup-guide.md))
-2. Install dependencies: `pip install -e ".[dev]"`
-3. Authenticate: `python scripts/first_auth.py`
+2. Install dependencies: `uv sync`
+3. Authenticate: `uv run python scripts/first_auth.py`
 4. Install daily sync: `bash scripts/install_launchd.sh`
-5. Add MCP server to Claude Code / Cursor config
-6. Start asking questions!
+5. Add MCP server to Claude Code / Cursor config (see setup guide)
+6. Install the `meet-analysis` skill: `cp skills/meet-analysis/SKILL.md ~/.claude/skills/meet-analysis/SKILL.md`
+7. Start asking questions!
 
 ## Architecture
 

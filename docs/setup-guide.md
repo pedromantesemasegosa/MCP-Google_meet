@@ -7,6 +7,7 @@ Step-by-step guide to configure Google Cloud OAuth for MCP Meet Notes.
 - A Google account (personal or Workspace)
 - Access to Google Cloud Console
 - Python 3.11+ installed
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) installed (recommended) or pip
 
 ## Step 1: Create a Google Cloud Project
 
@@ -75,38 +76,68 @@ Google Cloud Console now uses the **Google Auth platform** section (previously
 6. Click "Download JSON"
 7. Save the file as `config/credentials.json` in this project
 
-## Step 5: First Authentication
+## Step 5: Install Dependencies
+
+With uv (recommended — uses the locked versions from `uv.lock`):
 
 ```bash
-python scripts/first_auth.py
+uv sync
+```
+
+Or with pip:
+
+```bash
+pip install -e .
+```
+
+## Step 6: First Authentication
+
+```bash
+uv run python scripts/first_auth.py
 ```
 
 This opens your browser. Log in with your Google account and grant read-only
 access to Drive. The token is saved to `config/token.json` for future use.
 
-## Step 6: Install Daily Sync
+## Step 7: Install Daily Sync
 
 ```bash
 bash scripts/install_launchd.sh
 ```
 
 This installs a macOS launchd job that syncs meetings daily at 9:00 AM.
+If the sync fails on startup (e.g. no network yet), it retries up to 3 times.
 
-## Step 7: Configure MCP Server
+## Step 8: Configure MCP Server
 
-Add to your Claude Code or Cursor MCP settings:
+Add to your Claude Code MCP settings (`~/.claude/settings.json`) or Cursor MCP config:
 
 ```json
 {
   "mcpServers": {
     "meet-notes": {
-      "command": "python",
-      "args": ["-m", "src.server"],
-      "cwd": "/path/to/MCP-Meet"
+      "command": "uv",
+      "args": ["run", "python", "-m", "src.server"],
+      "cwd": "/path/to/MCP-Google_meet"
     }
   }
 }
 ```
+
+Replace `/path/to/MCP-Google_meet` with the absolute path to this project on your machine.
+
+## Step 9: Install the meet-analysis skill (Claude Code only)
+
+This repo includes a Claude Code skill that enables AI-powered analysis on top of the
+raw MCP tools — it cross-references multiple tools and delivers synthesized insights
+instead of raw JSON.
+
+```bash
+mkdir -p ~/.claude/skills/meet-analysis
+cp skills/meet-analysis/SKILL.md ~/.claude/skills/meet-analysis/SKILL.md
+```
+
+Once installed, Claude will automatically use it when you ask questions about your meetings.
 
 ## What you can ask
 
