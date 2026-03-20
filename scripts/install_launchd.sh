@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 PLIST_SRC="$SCRIPT_DIR/com.mcp-meet.sync.plist"
 PLIST_DST="$HOME/Library/LaunchAgents/com.mcp-meet.sync.plist"
-PYTHON_PATH="$(which python3)"
+PYTHON_PATH="$PROJECT_DIR/.venv/bin/python"
 
 echo "MCP Meet Notes — launchd installer"
 echo "===================================="

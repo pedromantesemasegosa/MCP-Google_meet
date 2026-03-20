@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 import uuid
 from datetime import datetime, timezone
 from logging.handlers import TimedRotatingFileHandler
@@ -112,13 +113,19 @@ def main() -> None:
     meetings_dir = project_root / settings.get("meetings_dir", "meetings")
     meetings_dir.mkdir(exist_ok=True)
     folder_name = settings.get("drive_folder_name", "Meeting notes")
-    try:
-        drive = DriveClient(config_dir=config_dir, folder_name=folder_name)
-    except Exception as e:
-        logger.error("Failed to initialize Drive client: %s", e)
-        return
-    syncer = Syncer(meetings_dir=meetings_dir, drive_client=drive)
-    syncer.sync()
+    max_attempts = 3
+    retry_delay = 60
+    for attempt in range(1, max_attempts + 1):
+        try:
+            drive = DriveClient(config_dir=config_dir, folder_name=folder_name)
+            Syncer(meetings_dir=meetings_dir, drive_client=drive).sync()
+            return
+        except Exception as e:
+            logger.error("Attempt %d/%d failed: %s", attempt, max_attempts, e)
+            if attempt < max_attempts:
+                logger.info("Retrying in %d seconds...", retry_delay)
+                time.sleep(retry_delay)
+    logger.error("All %d attempts failed. Giving up.", max_attempts)
 
 
 if __name__ == "__main__":

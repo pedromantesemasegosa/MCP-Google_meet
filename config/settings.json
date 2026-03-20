@@ -1,5 +1,5 @@
 {
   "meetings_dir": "meetings",
-  "drive_folder_name": "Meeting notes",
+  "drive_folder_name": "Meeting Notes",
   "sync_interval_description": "daily via launchd"
 }

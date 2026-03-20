@@ -20,6 +20,14 @@ from src.search import (
 )
 
 
+def _read_last_sync_log(project_root: Path, n_lines: int = 20) -> list[str]:
+    log_path = project_root / "logs" / "sync.log"
+    if not log_path.exists():
+        return []
+    with open(log_path, encoding="utf-8") as f:
+        return f.readlines()[-n_lines:]
+
+
 def create_server(meetings_dir: Path | None = None) -> FastMCP:
     """Create and configure the MCP server."""
     if meetings_dir is None:
@@ -84,6 +92,38 @@ def create_server(meetings_dir: Path | None = None) -> FastMCP:
         dt = datetime.fromisoformat(date_to) if date_to else None
         results = _get_action_items(index, meetings_dir, df, dt, participant)
         return json.dumps(results, indent=2, ensure_ascii=False)
+
+    @mcp.tool()
+    async def get_sync_status() -> str:
+        """Get the status of the last sync: when it ran, how many meetings are indexed,
+        and whether the last run succeeded or failed."""
+        index = index_manager.load()
+        log_lines = _read_last_sync_log(_PROJECT_ROOT)
+
+        last_sync = index.last_sync.isoformat() if index.last_sync else None
+        total_meetings = len(index.meetings)
+
+        # Parse last run result from log lines
+        last_run: dict = {}
+        for line in reversed(log_lines):
+            line = line.strip()
+            if "Sync completed" in line:
+                last_run = {"status": "success", "detail": line}
+                break
+            if "All" in line and "attempts failed" in line:
+                last_run = {"status": "failed", "detail": line}
+                break
+            if "Attempt" in line and "failed" in line:
+                last_run = {"status": "failed", "detail": line}
+                break
+
+        result = {
+            "last_sync": last_sync,
+            "total_meetings_indexed": total_meetings,
+            "last_run": last_run if last_run else {"status": "unknown", "detail": "No log entries found"},
+            "recent_log": [l.strip() for l in log_lines[-5:]],
+        }
+        return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool()
     async def get_executive_summary(
