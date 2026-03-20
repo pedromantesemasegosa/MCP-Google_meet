@@ -7,11 +7,30 @@ and exposes 6 search tools via MCP (Model Context Protocol).
 
 ## What can you ask?
 
-- "What did we discuss about the K8s migration?"
-- "What meetings did Laura attend this week?"
-- "How has the onboarding redesign evolved over the last month?"
-- "What action items came out of yesterday's meetings?"
-- "Give me a summary of all meetings from this week"
+**Activity & summaries**
+- "What happened in meetings this week?"
+- "Give me an executive summary of March"
+- "What decisions were made in the last two weeks?"
+
+**Topics & projects**
+- "Has the onboarding redesign been discussed recently? Is it moving forward?"
+- "How has the database performance topic evolved over the last month?"
+- "What was said about the Q2 roadmap across all meetings?"
+
+**People**
+- "Who has contributed the most in the last few meetings?"
+- "What has Laura been working on this month?"
+- "Who has the most open action items right now?"
+
+**Action items**
+- "What action items are pending from this week?"
+- "Do I have any tasks assigned to me?"
+- "Are there any action items from the client review that haven't been followed up?"
+
+**Patterns & signals**
+- "Is there any topic that keeps coming up without resolution?"
+- "Which meetings had the most participants?"
+- "Any blockers mentioned in recent syncs?"
 
 ## Quick Start
 
@@ -38,6 +57,7 @@ Google Drive (Gemini notes) → Syncer (daily) → Local Markdown → MCP Server
 | `get_topic_progression` | Track how a topic evolved over time |
 | `get_action_items` | Extract action items with filters |
 | `get_executive_summary` | Get a summary of meetings in a range |
+| `get_sync_status` | Check when the last sync ran and whether it succeeded |
 
 ## Project Structure
 
