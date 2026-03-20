@@ -32,6 +32,15 @@ and exposes 7 search tools via MCP (Model Context Protocol).
 - "Which meetings had the most participants?"
 - "Any blockers mentioned in recent syncs?"
 
+## Setup tip
+
+The local setup involves several steps (Google Cloud, OAuth, launchd, MCP config).
+Let an AI do it with you — paste this into Claude or any assistant:
+
+> "Help me set up this project locally: [paste README or link to setup guide]. Guide me step by step."
+
+The AI can walk you through Google Cloud configuration, run the install commands, and troubleshoot errors as they appear.
+
 ## Quick Start
 
 1. Set up Google Cloud OAuth ([setup guide](docs/setup-guide.md))

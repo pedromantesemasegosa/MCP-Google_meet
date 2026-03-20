@@ -110,7 +110,7 @@ If the sync fails on startup (e.g. no network yet), it retries up to 3 times.
 
 ## Step 8: Configure MCP Server
 
-Add to your Claude Code MCP settings (`~/.claude/settings.json`) or Cursor MCP config:
+Edit `~/.claude/settings.json` (create it if it doesn't exist) and add:
 
 ```json
 {
@@ -126,6 +126,8 @@ Add to your Claude Code MCP settings (`~/.claude/settings.json`) or Cursor MCP c
 
 Replace `/path/to/MCP-Google_meet` with the absolute path to this project on your machine.
 
+> **Cursor users**: add the same block under `mcpServers` in `.cursor/mcp.json` at the project root.
+
 ## Step 9: Install the meet-analysis skill (Claude Code only)
 
 This repo includes a Claude Code skill that enables AI-powered analysis on top of the
@@ -138,6 +140,23 @@ cp skills/meet-analysis/SKILL.md ~/.claude/skills/meet-analysis/SKILL.md
 ```
 
 Once installed, Claude will automatically use it when you ask questions about your meetings.
+
+## Step 10: Verify the setup
+
+Run this to confirm everything is wired correctly:
+
+```bash
+uv run python -c "from src.server import create_server; create_server(); print('MCP server OK')"
+```
+
+Then trigger a manual sync to make sure Drive access works:
+
+```bash
+uv run python -m src.syncer
+```
+
+Check `logs/sync.log` — you should see `Sync completed` with the number of documents processed.
+If you see `Token refresh failed`, run Step 6 again.
 
 ## What you can ask
 
