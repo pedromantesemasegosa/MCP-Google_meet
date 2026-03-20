@@ -1,4 +1,4 @@
-"""MCP Server exposing 6 meeting search tools via FastMCP."""
+"""MCP Server exposing meeting search and retrieval tools via FastMCP."""
 from __future__ import annotations
 
 import json
@@ -124,6 +124,27 @@ def create_server(meetings_dir: Path | None = None) -> FastMCP:
             "recent_log": [l.strip() for l in log_lines[-5:]],
         }
         return json.dumps(result, indent=2, ensure_ascii=False)
+
+    @mcp.tool()
+    async def get_meeting_transcript(meeting_id: str) -> str:
+        """Get the full content of a meeting by its ID, including transcript,
+        summary, participants, and action items. Use this when the user wants
+        to read or reference a specific meeting in detail."""
+        index = index_manager.load()
+        entry = next((m for m in index.meetings if m.id == meeting_id), None)
+        if entry is None:
+            return json.dumps({"error": f"Meeting '{meeting_id}' not found."})
+        md_path = meetings_dir / entry.file
+        if not md_path.exists():
+            return json.dumps({"error": f"File '{entry.file}' not found on disk."})
+        return json.dumps({
+            "id": entry.id,
+            "title": entry.title,
+            "date": entry.date.isoformat(),
+            "participants": entry.participants,
+            "file": entry.file,
+            "content": md_path.read_text(encoding="utf-8"),
+        }, indent=2, ensure_ascii=False)
 
     @mcp.tool()
     async def get_executive_summary(

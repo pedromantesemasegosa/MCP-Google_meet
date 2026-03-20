@@ -26,6 +26,7 @@ the results into clear, actionable insights. Never just return the raw JSON — 
 | `mcp__meet-notes__get_topic_progression` | `topic` | How a topic has evolved over time |
 | `mcp__meet-notes__get_action_items` | `date_from?`, `date_to?`, `participant?` | Pending tasks and commitments |
 | `mcp__meet-notes__get_executive_summary` | `date_from`, `date_to?` | High-level summary of a period |
+| `mcp__meet-notes__get_meeting_transcript` | `meeting_id` | Full content of a specific meeting |
 
 Dates use ISO format: `"2026-03-01"` or `"2026-03-01T09:00:00"`.
 
@@ -92,3 +93,4 @@ For executive summaries or weekly reviews, use the full structure.
 - Partial name matching works: `"laura"` will match `"laura.garcia@company.com"`.
 - If a topic returns no results, try synonyms or broader terms.
 - If action items reference a topic, cross-reference with `get_topic_progression` to add context.
+- To read a full transcript, first find the meeting ID with any search tool, then call `get_meeting_transcript(meeting_id)`.

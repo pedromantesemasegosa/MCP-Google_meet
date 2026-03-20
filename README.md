@@ -3,7 +3,7 @@
 Search your Google Meet transcriptions and summaries from Claude Code or Cursor.
 
 Syncs Gemini-generated meeting notes from Google Drive to local Markdown files,
-and exposes 7 search tools via MCP (Model Context Protocol).
+and exposes 8 tools via MCP (Model Context Protocol).
 
 ## What can you ask?
 
@@ -68,6 +68,7 @@ Google Drive (Gemini notes) → Syncer (daily) → Local Markdown → MCP Server
 | `get_action_items` | Extract action items with filters |
 | `get_executive_summary` | Get a summary of meetings in a range |
 | `get_sync_status` | Check when the last sync ran and whether it succeeded |
+| `get_meeting_transcript` | Read the full content of a specific meeting by ID |
 
 ## Project Structure
 
