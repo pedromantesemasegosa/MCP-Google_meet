@@ -126,7 +126,10 @@ Edit `~/.claude/settings.json` (create it if it doesn't exist) and add:
 
 Replace `/path/to/MCP-Google_meet` with the absolute path to this project on your machine.
 
-> **Cursor users**: add the same block under `mcpServers` in `.cursor/mcp.json` at the project root.
+**Restart Claude Code** after saving — the MCP server loads at startup. From that point,
+the meeting tools are available in every conversation automatically, no commands needed.
+
+> **Cursor users**: add the same block under `mcpServers` in `.cursor/mcp.json` at the project root, then restart Cursor.
 
 ## Step 9: Install the meet-analysis skill (Claude Code only)
 
@@ -139,7 +142,9 @@ mkdir -p ~/.claude/skills/meet-analysis
 cp skills/meet-analysis/SKILL.md ~/.claude/skills/meet-analysis/SKILL.md
 ```
 
-Once installed, Claude will automatically use it when you ask questions about your meetings.
+No restart needed — the skill is picked up automatically in the next conversation.
+Just ask Claude questions about your meetings in plain language and it will use both
+the MCP tools and the skill to answer.
 
 ## Step 10: Verify the setup
 
